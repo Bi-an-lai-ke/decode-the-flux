@@ -461,6 +461,14 @@
         if(matchCount === 1) return 'partial';
         return 'wrong';
     }
+	
+	// 将秒数格式化为 MM:SS.mmm
+	function formatTime(seconds) {
+		const mins = Math.floor(seconds / 60);
+		const secs = Math.floor(seconds % 60);
+		const millis = Math.floor((seconds - Math.floor(seconds)) * 1000);
+		return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
+	}
 
     // ---------- 图片路径辅助 ----------
     function getMaterialImagePath(mat) {
@@ -547,13 +555,17 @@
     function startTimer() {
         if(state.timerInterval) stopTimer();
         state.startTime = Date.now();
-        state.timerInterval = setInterval(()=>{
-            if(!state.startTime) return;
-            let elapsed = (Date.now() - state.startTime)/1000;
-            if(!state.victory && state.gameActive) timerDisplaySpan.innerText = elapsed.toFixed(2);
-            else if(state.victory) timerDisplaySpan.innerText = elapsed.toFixed(2);
-            else timerDisplaySpan.innerText = "0.00";
-        },100);
+		state.timerInterval = setInterval(()=>{
+			if(!state.startTime) return;
+			let elapsed = (Date.now() - state.startTime) / 1000;
+			if(!state.victory && state.gameActive) {
+				timerDisplaySpan.innerText = formatTime(elapsed);
+			} else if(state.victory) {
+				timerDisplaySpan.innerText = formatTime(elapsed);
+			} else {
+				timerDisplaySpan.innerText = "00:00.000";
+			}
+		}, 100);  // 仍保持 100ms 更新一次，足够显示毫秒
     }
     function updateAttemptCounter() { attemptCountSpan.innerText = state.currentAttempt; }
     function resetGameUI(resetSlotsContent=true) {
@@ -584,7 +596,7 @@
                 }
             } else {
                 submitBtn.disabled = true;
-                alert(`🎉 破解成功！ 尝试次数:${state.currentAttempt} 用时:${timerDisplaySpan.innerText}秒`);
+                alert(`🎉 破解成功！ 尝试次数:${state.currentAttempt} 用时:${formatTime(parseFloat(timerDisplaySpan.innerText))}秒`);
             }
             renderHistory();
             return true;
@@ -824,6 +836,7 @@
         else state.password = generateRandomPassword();
         updateAttemptCounter();
         stopTimer();
+		timerDisplaySpan.innerText = "00:00.000";
         startTimer();
         renderLeftPanel();
         renderVerifySlots();
@@ -893,8 +906,8 @@
         stopTimer();
         let totalAttempts = state.raceStats.reduce((a,b)=>a+b.attempts,0);
         let totalTime = state.raceStats.reduce((a,b)=>a+b.timeSec,0);
-        alert(`🏆 比赛完成！\n各轮成绩:\n${state.raceStats.map((s,i)=>`密码${i+1}: ${s.attempts}次尝试, ${s.timeSec.toFixed(2)}秒`).join('\n')}\n总次数:${totalAttempts}  总用时:${totalTime.toFixed(2)}秒`);
-    }
+		alert(`🏆 比赛完成！\n各轮成绩:\n${state.raceStats.map((s,i)=>`密码${i+1}: ${s.attempts}次尝试, ${formatTime(s.timeSec)}`).join('\n')}\n总次数:${totalAttempts}  总用时:${formatTime(totalTime)}`); 
+	}
 
     function setMode(mode) {
         if(state.mode === mode && state.gameActive) return;
