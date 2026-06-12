@@ -170,32 +170,28 @@
             padding: 0.8rem;
             margin-bottom: 1rem;
         }
-        .history-row {
-            display: flex;
-            gap: 0.6rem;
-            margin-bottom: 0.8rem;
-            background: #1b281bc9;
-            padding: 5px;
-            border-radius: 1.2rem;
-            flex-wrap: nowrap;
-        }
-        .history-cell {
-            width: 55px;
-            height: 55px;
-            background: #3a2c1c;
-            border-radius: 12px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: bold;
-            color: #ffecb3;
-            text-align: center;
-            word-break: break-all;
+		.history-row {
+			display: grid;
+			grid-template-columns: repeat(10, minmax(40px, 1fr));
+			gap: 0.6rem;
+			margin-bottom: 0.8rem;
+			background: #1b281bc9;
+			padding: 5px;
+			border-radius: 1.2rem;
+		}
+		.history-cell {
+			aspect-ratio: 1 / 1;
+			background: #3a2c1c;
+			border-radius: 12px;
+			position: relative;
 			display: flex;
 			align-items: center;
 			justify-content: center;
+			font-size: 0.8rem;
+			font-weight: bold;
+			color: #ffecb3;
+			text-align: center;
+			word-break: break-all;
 		}
         .result-badge {
             position: absolute;
@@ -211,27 +207,28 @@
             font-size: 14px;
             font-weight: bold;
         }
-        .verify-row {
-            display: flex;
-            gap: 0.6rem;
-            margin: 1rem 0;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .slot {
-            width: 68px;
-            height: 68px;
-            background: #2c2b1f;
-            border-radius: 18px;
-            border: 2px solid #b9924b;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.05s linear;
-            position: relative;
-            cursor: pointer;
-            overflow: hidden;
-        }
+		.verify-row {
+			display: grid;
+			grid-template-columns: repeat(10, minmax(45px, 1fr));
+			gap: 0.6rem;
+			margin: 1rem 0;
+			justify-items: center;
+			align-items: center;
+		}
+		.slot {
+			width: 100%;
+			aspect-ratio: 1 / 1;  /* 保持正方形 */
+			background: #2c2b1f;
+			border-radius: 18px;
+			border: 2px solid #b9924b;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: 0.05s linear;
+			position: relative;
+			cursor: pointer;
+			overflow: hidden;
+		}
         .slot img {
             width: 100%;
             height: 100%;
@@ -343,6 +340,12 @@
             .slot { width: 55px; height: 55px; }
             .history-cell { width: 45px; height: 45px; font-size: 0.7rem; }
         }
+		@media (max-width: 600px) {
+			.verify-row {
+				gap: 0.3rem;
+				grid-template-columns: repeat(10, minmax(35px, 1fr));
+			}
+		}
     </style>
 </head>
 <body>
