@@ -1,6 +1,6 @@
 # 🔐 解码风云
 
-[![GitHub Pages](https://img.shields.io/badge/部署-GitHub%20Pages-blue)](https://Bi-an-lai-ke.github.io/decode-the-flux/)
+[![GitHub Pages](https://img.shields.io/badge/链接-GitHub%20Pages-blue)](https://Bi-an-lai-ke.github.io/decode-the-flux/)
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 10种素材中可重复地选择两种，可以按一定规则无顺序地组成子码。10个不同的子码按照一定顺序组成特定密码。请利用强大的推理力、观察力、记忆力、创造力，从100个候选子码中识别出合规组成子码，并利用尽可能少的尝试次数，尽快推断出正确密码。
