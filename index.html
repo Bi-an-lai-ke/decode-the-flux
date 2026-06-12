@@ -414,7 +414,7 @@
             <div class="history-area" id="historyArea"><div style="text-align:center;color:#cca86e;">等待提交记录...</div></div>
             <div class="verify-row" id="verifyRow"></div>
             <div class="action-bar">
-                <div class="timer-counter"><span>⏲️ 耗时: <span id="timerDisplay">0.00</span> s</span><span>🎯 尝试次数: <span id="attemptCount">0</span></span></div>
+                <div class="timer-counter"><span>⏲️ 耗时: <span id="timerDisplay">0.00</span></span><span>🎯 尝试次数: <span id="attemptCount">0</span></span></div>
                 <div class="legend">✅完全正确 🔄栏位错误 🔶部分正确 ❌完全错误</div>
                 <button id="submitBtn" disabled>🚀 提交尝试</button>
             </div>
@@ -665,9 +665,10 @@
                     finishRace();
                 }
             } else {
-                submitBtn.disabled = true;
-                showMessage("🎉 破解成功", `尝试次数:${state.currentAttempt} 用时:${formatTime(parseFloat(timerDisplaySpan.innerText))}`);
-            }
+				submitBtn.disabled = true;
+				let finalElapsed = (Date.now() - state.startTime) / 1000;
+				showMessage("🎉 破解成功", `尝试次数:${state.currentAttempt} 用时:${formatTime(finalElapsed)}`); 
+			}
             renderHistory();
             return true;
         }
@@ -1027,6 +1028,7 @@
 		let totalAttempts = state.raceStats.reduce((a,b)=>a+b.attempts,0);
 		let totalTime = state.raceStats.reduce((a,b)=>a+b.timeSec,0);
 		let message = `各轮成绩:\n${state.raceStats.map((s,i)=>`密码${i+1}: ${s.attempts}次尝试, ${formatTime(s.timeSec)}`).join('\n')}\n总次数:${totalAttempts}  总用时:${formatTime(totalTime)}`;
+		showMessage("🏆 比赛完成", message);
 		showMessage("🏆 比赛完成", message);
 	}
 
