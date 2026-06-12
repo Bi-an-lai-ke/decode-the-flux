@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>解码风云</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            background: linear-gradient(145deg, #1a472a 0%, #0e2a1a 100%);
+            font-family: 'Segoe UI', 'Poppins', 'Roboto', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .game-container {
+            max-width: 1600px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(3px);
+            border-radius: 3rem;
+            padding: 1.5rem;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1);
+            border: 1px solid #cbb87b;
+        }
+        h1 {
+            text-align: center;
+            font-size: 3rem;
+            letter-spacing: 6px;
+            margin: 0 0 0.5rem 0;
+            font-weight: 800;
+            background: linear-gradient(135deg, #F9E0A0, #D4AF37);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .rule-board {
+            background: #2c2118e0;
+            border-radius: 2rem;
+            padding: 0.7rem 1.2rem;
+            margin-bottom: 1.2rem;
+            color: #f7ecc7;
+            font-size: 0.8rem;
+            border-left: 8px solid #e6b422;
+            backdrop-filter: blur(4px);
+            font-weight: 500;
+        }
+        .mode-bar {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        .mode-btn {
+            background: #2b3b2a;
+            border: none;
+            padding: 0.6rem 1.8rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 3rem;
+            color: #ecd89e;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 3px 0 #0f1f0a;
+        }
+        .mode-btn.active {
+            background: #d4af37;
+            color: #1e2a1a;
+            box-shadow: 0 0 12px gold;
+        }
+        .game-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+        }
+        .materials-panel {
+            flex: 1.2;
+            min-width: 280px;
+            background: #1f2c1bc9;
+            border-radius: 2rem;
+            padding: 1rem;
+            backdrop-filter: blur(4px);
+        }
+        .subcode-panel {
+            flex: 1.2;
+            min-width: 350px;
+        }
+        .grid-4x {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .row-icons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .material-card {
+            width: 70px;
+            height: 70px;
+            background: #fef3cf;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 0 #9b7c48;
+            cursor: pointer;
+            transition: 0.05s linear;
+            border: 2px solid #ffdf8c;
+            overflow: hidden;
+        }
+        .material-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .material-card.selected {
+            transform: scale(0.96);
+            box-shadow: 0 2px 0 #9b7c48;
+            filter: brightness(1.1);
+            border: 3px solid #f5bc70;
+        }
+        .subcode-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 5px;
+            background: #171f12a0;
+            border-radius: 1.5rem;
+        }
+        .subcode-item {
+            aspect-ratio: 1 / 1;
+            background: #332811;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.05s linear;
+            border: 1px solid #c6a15b;
+            overflow: hidden;
+        }
+        .subcode-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .verify-panel {
+            flex: 2;
+            min-width: 580px;
+            background: #0f1f10b3;
+            border-radius: 2rem;
+            padding: 1rem;
+        }
+        .history-area {
+            background: #030e05a0;
+            border-radius: 1.5rem;
+            height: 340px;
+            overflow-y: auto;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        .history-row {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 0.8rem;
+            background: #1b281bc9;
+            padding: 5px;
+            border-radius: 1.2rem;
+            flex-wrap: nowrap;
+        }
+        .history-cell {
+            width: 55px;
+            height: 55px;
+            background: #3a2c1c;
+            border-radius: 12px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #ffecb3;
+            text-align: center;
+            word-break: break-all;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+        .result-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -4px;
+            width: 22px;
+            height: 22px;
+            background: #222;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .verify-row {
+            display: flex;
+            gap: 0.6rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .slot {
+            width: 68px;
+            height: 68px;
+            background: #2c2b1f;
+            border-radius: 18px;
+            border: 2px solid #b9924b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.05s linear;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .slot.locked {
+            background: #1b3f1f;
+            border: 3px solid #7bcb5e;
+            filter: drop-shadow(0 0 6px #6fcf67);
+            cursor: not-allowed;
+        }
+        .slot.gray-temp {
+            background: #5f5b3e;
+            filter: brightness(0.6);
+        }
+        .action-bar {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #ab8e54;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+            font-size: 1rem;
+        }
+        button:active {
+            transform: scale(0.97);
+        }
+        .legend {
+            display: flex;
+            gap: 1rem;
+            background: #00000066;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            color: white;
+        }
+        .help-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+        }
+        .help-modal {
+            background: #2c2118;
+            border-radius: 2rem;
+            max-width: 500px;
+            width: 90%;
+            padding: 1.5rem;
+            color: #f7ecc7;
+            border: 2px solid #d4af37;
+            box-shadow: 0 10px 25px black;
+        }
+        .help-modal h3 {
+            margin-top: 0;
+            text-align: center;
+        }
+        .help-modal p {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .help-modal button {
+            display: block;
+            margin: 1rem auto 0;
+            background: #d4af37;
+            color: #1e2a1a;
+            font-weight: bold;
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+        }
+        .timer-counter {
+            display: flex;
+            gap: 1rem;
+            font-weight: bold;
+            background: #00000099;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            color: white;
+        }
+        .answer-tool {
+            margin-top: 0.5rem;
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+        }
+        .hidden-answer {
+            background: #222222aa;
+            padding: 0.2rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        @media (max-width: 980px) {
+            .slot { width: 55px; height: 55px; }
+            .history-cell { width: 45px; height: 45px; font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container" id="app">
+    <h1>🔐 解码风云 🔍</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div class="rule-board">两个可重复的素材可以按特定规则无顺序地组合成子码，10个不同的子码按一定顺序组合成密码。请使用尽可能少的尝试次数尽快推理出正确密码。右击点击栏位可移除选择。</div>
+        <button id="helpBtn" style="background:#ab8e54; border-radius:2rem; padding:0.5rem 1rem; margin-left:1rem;">❓ 帮助</button>
+    </div>
+    <div class="mode-bar">
+        <button class="mode-btn" data-mode="practice">📘 练习模式</button>
+        <button class="mode-btn" data-mode="timed">⏱️ 计时模式</button>
+        <button class="mode-btn" data-mode="race">🏆 比赛模式</button>
+    </div>
+    <div class="game-area">
+        <div class="materials-panel" id="leftPanel"></div>
+        <div class="verify-panel" id="rightPanel">
+            <div class="history-area" id="historyArea"><div style="text-align:center;color:#cca86e;">等待提交记录...</div></div>
+            <div class="verify-row" id="verifyRow"></div>
+            <div class="action-bar">
+                <div class="timer-counter"><span>⏲️ 耗时: <span id="timerDisplay">0.00</span> s</span><span>🎯 尝试次数: <span id="attemptCount">0</span></span></div>
+                <div class="legend">✅完全正确 🔄栏位错误 🔶部分正确 ❌完全错误</div>
+                <button id="submitBtn" disabled>🚀 提交尝试</button>
+            </div>
+            <div id="practiceExtras" style="margin-top: 12px;"></div>
+        </div>
+    </div>
+    <div id="helpOverlay" class="help-overlay">
+        <div class="help-modal">
+            <h3>📖 详细规则</h3>
+            <p><strong>1. 素材与子码</strong><br>
+            共有10种素材。<br>
+            两个素材（可相同，不分顺序）可以组成子码。<br>
+            <strong>有些组合不可组成子码，共10组。</strong><br>
+            因此可组成的合法子码共45种。
+            </p>
+            <p><strong>2. 密码构成</strong><br>
+            最终密码由10个<strong>不同的合法子码</strong>按特定顺序排列而成。
+            </p>
+            <p><strong>3. 提交与反馈</strong><br>
+            每次提交需填满10个栏位（每个栏位为一个子码）。提交后每个栏位会得到四种反馈之一：<br>
+            ✅ 完全正确：子码正确且位置正确，后续该栏位被锁定不可更改。<br>
+            🔄 栏位错误：密码中包含此子码，但不在当前栏位。<br>
+            🔶 部分正确：该子码的一个组成素材与正确子码的一个素材相同，另一个不同。（若同时满足“栏位错误”，优先反馈🔄）<br>
+            ❌ 完全错误：该子码及其素材均不参与密码。
+            </p>
+            <p><strong>4. 操作方式</strong><br>
+            • <strong>练习模式</strong>：点击左侧素材，再点击右侧栏位放置素材；相同栏位再次点击另一素材可组合成子码；右键点击栏位取消选择。<br>
+            • <strong>计时模式 / 比赛模式</strong>：左侧为100个子码方阵（含45个合法子码+10个非法子码+45个干扰子码），直接点击子码再点击栏位放置；非法/干扰子码提交后反馈始终为❌。<br>
+            • 每次提交后，上方历史区域会显示本次结果图标。<br>
+            • 完全正确后会停止计时并锁定答案。
+            </p>
+            <p><strong>5. 比赛模式</strong><br>
+            需连续破解3个密码，展示每个密码的尝试次数和用时，以及总次数和总用时。
+            </p>
+            <button id="closeHelpBtn">返回</button>
+        </div>
+    </div>
+</div>
+<script>
+    // ---------- 全局常量 ----------
+    const MATERIALS = ['1','2','3','4','5','6','7','8','9','X'];
+    const FORBIDDEN_PAIRS = ['15','24','37','46','56','68','7X','89','8X','9X','51','42','73','64','65','86','X7','98','X8','X9'];
+    function isValidSubcode(m1, m2) {
+        let pair1 = m1+m2, pair2 = m2+m1;
+        return !FORBIDDEN_PAIRS.includes(pair1) && !FORBIDDEN_PAIRS.includes(pair2);
+    }
+    // 生成所有合法子码（45个）
+    function getAllLegalSubcodes() {
+        let set = new Set();
+        for(let i=0;i<MATERIALS.length;i++){
+            for(let j=i;j<MATERIALS.length;j++){
+                let a=MATERIALS[i], b=MATERIALS[j];
+                if(isValidSubcode(a,b)) set.add(a+b);
+            }
+        }
+        return Array.from(set);
+    }
+    const LEGAL_SUBCODES = getAllLegalSubcodes(); // 45个
+    // 10个非法子码（不可组合）
+    const ILLEGAL_SUBCODES = ['15','24','37','46','56','68','7X','89','8X','9X'];
+    // 干扰子码标识 G1~G45
+    const DISTRACTOR_COUNT = 45;
+    function isDistractorCode(code) {
+        return typeof code === 'string' && code.startsWith('G');
+    }
+
+    // 生成随机密码（10个不同合法子码随机排序）
+    function generateRandomPassword() {
+        let shuffled = [...LEGAL_SUBCODES];
+        for(let i=shuffled.length-1;i>0;i--){ let j=Math.floor(Math.random()*(i+1)); [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]; }
+        return shuffled.slice(0,10);
+    }
+
+    // 解析子码两个素材
+    function splitSubcode(sc) {
+        if (!sc || sc.length !== 2) return ['?','?'];
+        return [sc[0], sc[1]];
+    }
+
+    // 反馈核心 (guess子码, correctSlot, fullPassword)
+    function evaluateSingle(guess, correctSlot, fullPassword) {
+        // 干扰子码或非法子码直接返回完全错误
+        if (isDistractorCode(guess) || ILLEGAL_SUBCODES.includes(guess)) {
+            return 'wrong';
+        }
+        if(guess === correctSlot) return 'perfect';
+        if(fullPassword.includes(guess)) return 'positionWrong';
+        let [g1,g2] = splitSubcode(guess);
+        let [c1,c2] = splitSubcode(correctSlot);
+        let setCorrect = new Set([c1,c2]);
+        let matchCount = (setCorrect.has(g1)?1:0)+(setCorrect.has(g2)?1:0);
+        if(matchCount === 1) return 'partial';
+        return 'wrong';
+    }
+
+    // ---------- 图片路径辅助 ----------
+    function getMaterialImagePath(mat) {
+        return `images/materials/${mat}.png`;
+    }
+    function getSubcodeImagePath(subcodeStr) {
+        if (LEGAL_SUBCODES.includes(subcodeStr)) {
+            return `images/subcodes/${subcodeStr}.png`;
+        } else if (ILLEGAL_SUBCODES.includes(subcodeStr)) {
+            return `images/subcodes/${subcodeStr}.png`;
+        } else if (isDistractorCode(subcodeStr)) {
+            let num = subcodeStr.substring(1);
+            return `images/subcodes/g${num}.png`;
+        } else {
+            return `images/subcodes/unknown.png`;
+        }
+    }
+
+    // 构建100个不同子码项（45合法 + 10非法 + 45干扰）
+    function buildAllSubcodeItems() {
+        let items = [];
+        // 合法子码
+        for (let sc of LEGAL_SUBCODES) {
+            items.push({ type: 'legal', subcodeStr: sc });
+        }
+        // 非法子码
+        for (let sc of ILLEGAL_SUBCODES) {
+            items.push({ type: 'illegal', subcodeStr: sc });
+        }
+        // 干扰子码 G1~G45
+        for (let i = 1; i <= DISTRACTOR_COUNT; i++) {
+            items.push({ type: 'distractor', subcodeStr: `G${i}` });
+        }
+        // 随机打乱顺序
+        for (let i = items.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [items[i], items[j]] = [items[j], items[i]];
+        }
+        return items;
+    }
+
+    // 全局状态管理器
+    class GameState {
+        constructor() {
+            this.mode = 'practice';
+            this.password = [];
+            this.lockedSlots = new Array(10).fill(false);
+            this.guessHistory = [];
+            this.currentAttempt = 0;
+            this.gameActive = false;
+            this.victory = false;
+            this.startTime = null;
+            this.timerInterval = null;
+            this.selectedMaterial = null;
+            this.selectedSubcode = null;
+            this.practiceAnswerVisible = false;
+            this.customPasswordEditable = false;
+            // 比赛模式
+            this.raceStats = [];
+            this.raceCurrentRound = 0;
+            this.raceTotalRounds = 3;
+            this.raceActive = false;
+            // 子码区所有项（缓存，用于刷新位置）
+            this.currentSubcodeItems = [];
+        }
+    }
+    const state = new GameState();
+    let currentUI = { verifySlots: new Array(10).fill(null) };
+
+    // DOM 元素
+    const leftPanel = document.getElementById('leftPanel');
+    const verifyRowDiv = document.getElementById('verifyRow');
+    const historyArea = document.getElementById('historyArea');
+    const submitBtn = document.getElementById('submitBtn');
+    const timerDisplaySpan = document.getElementById('timerDisplay');
+    const attemptCountSpan = document.getElementById('attemptCount');
+    const practiceExtras = document.getElementById('practiceExtras');
+
+    // 辅助函数
+    function stopTimer() {
+        if(state.timerInterval) clearInterval(state.timerInterval);
+        state.timerInterval = null;
+    }
+    function startTimer() {
+        if(state.timerInterval) stopTimer();
+        state.startTime = Date.now();
+        state.timerInterval = setInterval(()=>{
+            if(!state.startTime) return;
+            let elapsed = (Date.now() - state.startTime)/1000;
+            if(!state.victory && state.gameActive) timerDisplaySpan.innerText = elapsed.toFixed(2);
+            else if(state.victory) timerDisplaySpan.innerText = elapsed.toFixed(2);
+            else timerDisplaySpan.innerText = "0.00";
+        },100);
+    }
+    function updateAttemptCounter() { attemptCountSpan.innerText = state.currentAttempt; }
+    function resetGameUI(resetSlotsContent=true) {
+        if(resetSlotsContent) currentUI.verifySlots = new Array(10).fill(null);
+        renderVerifySlots();
+        if(!state.victory && state.gameActive) submitBtn.disabled = !isVerifyFull();
+        else submitBtn.disabled = true;
+    }
+    function isVerifyFull() {
+        return currentUI.verifySlots.every(slot => slot && slot.type === 'subcode');
+    }
+    function checkWin() {
+        if(!state.gameActive) return false;
+        if(state.victory) return true;
+        let currentGuessSubcodes = currentUI.verifySlots.map(s=> s?.val);
+        if(currentGuessSubcodes.length===10 && currentGuessSubcodes.every((v,i)=> v===state.password[i])) {
+            state.victory = true;
+            state.gameActive = false;
+            stopTimer();
+            if(state.mode === 'race') {
+                let elapsed = (Date.now() - state.startTime)/1000;
+                state.raceStats.push({ attempts: state.currentAttempt, timeSec: elapsed });
+                if(state.raceCurrentRound < 3) {
+                    state.raceCurrentRound++;
+                    startNewRaceRound();
+                } else {
+                    finishRace();
+                }
+            } else {
+                submitBtn.disabled = true;
+                alert(`🎉 破解成功！ 尝试次数:${state.currentAttempt} 用时:${timerDisplaySpan.innerText}秒`);
+            }
+            renderHistory();
+            return true;
+        }
+        return false;
+    }
+
+    // 提交逻辑
+    function onSubmit() {
+        if(!state.gameActive || state.victory) return;
+        if(!isVerifyFull()) { alert("请填满10个栏位（全部组合为子码）！"); return; }
+        let guessArr = currentUI.verifySlots.map(s=> s.val);
+        let results = [];
+        for(let i=0;i<10;i++) {
+            let g = guessArr[i];
+            let slotCorrect = state.password[i];
+            let res = evaluateSingle(g, slotCorrect, state.password);
+            results.push(res);
+        }
+        // 锁定完全正确的栏位
+        for(let i=0;i<10;i++) {
+            if(results[i]==='perfect') {
+                state.lockedSlots[i] = true;
+                if(currentUI.verifySlots[i]?.val !== state.password[i]) 
+                    currentUI.verifySlots[i] = {type:'subcode', val:state.password[i]};
+            }
+        }
+        state.guessHistory.unshift({ guesses: [...guessArr], results: [...results] });
+        if(state.guessHistory.length>20) state.guessHistory.pop();
+        state.currentAttempt++;
+        updateAttemptCounter();
+        renderHistory();
+        if(!checkWin()) {
+            for(let i=0;i<10;i++) {
+                if(state.lockedSlots[i]) 
+                    currentUI.verifySlots[i] = {type:'subcode', val:state.password[i]};
+            }
+            renderVerifySlots();
+        } else {
+            renderVerifySlots();
+            submitBtn.disabled = true;
+        }
+    }
+
+    // 渲染验证行槽位（显示图片）
+    function renderVerifySlots() {
+        verifyRowDiv.innerHTML = '';
+        for(let i=0;i<10;i++) {
+            const slot = document.createElement('div');
+            slot.className = 'slot';
+            if(state.lockedSlots[i]) slot.classList.add('locked');
+            const content = currentUI.verifySlots[i];
+            if(content) {
+                if(content.type === 'material') {
+                    const img = document.createElement('img');
+                    img.src = getMaterialImagePath(content.val);
+                    img.alt = content.val;
+                    slot.appendChild(img);
+                } else if(content.type === 'subcode') {
+                    const img = document.createElement('img');
+                    img.src = getSubcodeImagePath(content.val);
+                    img.alt = content.val;
+                    slot.appendChild(img);
+                }
+            } else {
+                slot.innerText = '?';
+            }
+            slot.addEventListener('click', (e) => { onSlotClick(i, e); });
+            slot.addEventListener('contextmenu', (e) => { e.preventDefault(); onSlotRightClick(i); });
+            verifyRowDiv.appendChild(slot);
+        }
+        submitBtn.disabled = !isVerifyFull() || state.victory || !state.gameActive;
+    }
+
+    function onSlotRightClick(idx) {
+        if(!state.gameActive || state.victory) return;
+        if(state.lockedSlots[idx]) return;
+        currentUI.verifySlots[idx] = null;
+        renderVerifySlots();
+    }
+
+    function onSlotClick(idx, event) {
+        if(!state.gameActive || state.victory) return;
+        if(state.lockedSlots[idx]) return;
+        if(state.mode === 'practice') {
+            if(state.selectedMaterial !== null) {
+                let current = currentUI.verifySlots[idx];
+                if(current && current.type === 'material') {
+                    let mat1 = current.val, mat2 = state.selectedMaterial;
+                    if(isValidSubcode(mat1, mat2)) {
+                        let sub = [mat1, mat2].sort().join('');
+                        currentUI.verifySlots[idx] = {type:'subcode', val: sub};
+                        state.selectedMaterial = null;
+                        clearSelectedHighlight();
+                        renderVerifySlots();
+                    } else {
+                        const slotDiv = verifyRowDiv.children[idx];
+                        slotDiv.classList.add('gray-temp');
+                        setTimeout(()=> slotDiv.classList.remove('gray-temp'), 300);
+                    }
+                } else if(!current || current.type === 'subcode') {
+                    currentUI.verifySlots[idx] = {type:'material', val: state.selectedMaterial};
+                    state.selectedMaterial = null;
+                    clearSelectedHighlight();
+                    renderVerifySlots();
+                }
+                state.selectedMaterial = null;
+                clearSelectedHighlight();
+            }
+        } else {
+            if(state.selectedSubcode !== null) {
+                currentUI.verifySlots[idx] = {type:'subcode', val: state.selectedSubcode};
+                state.selectedSubcode = null;
+                renderVerifySlots();
+            }
+        }
+    }
+
+    function clearSelectedHighlight() { 
+        document.querySelectorAll('.material-card, .subcode-item').forEach(el=>el.classList.remove('selected')); 
+    }
+
+    // 渲染左侧面板
+    function renderLeftPanel() {
+        if(state.mode === 'practice') {
+            leftPanel.className = 'materials-panel';
+            leftPanel.innerHTML = `<div class="grid-4x">
+                <div class="row-icons">${MATERIALS.slice(0,3).map(m=>`<div class="material-card" data-mat="${m}"><img src="${getMaterialImagePath(m)}" alt="${m}"></div>`).join('')}</div>
+                <div class="row-icons">${MATERIALS.slice(3,6).map(m=>`<div class="material-card" data-mat="${m}"><img src="${getMaterialImagePath(m)}" alt="${m}"></div>`).join('')}</div>
+                <div class="row-icons">${MATERIALS.slice(6,9).map(m=>`<div class="material-card" data-mat="${m}"><img src="${getMaterialImagePath(m)}" alt="${m}"></div>`).join('')}</div>
+                <div class="row-icons"><div class="material-card" data-mat="X"><img src="${getMaterialImagePath('X')}" alt="X"></div></div>
+            </div>`;
+            document.querySelectorAll('.material-card').forEach(card=>{
+                card.addEventListener('click',(e)=>{
+                    if(!state.gameActive || state.victory) return;
+                    let mat = card.getAttribute('data-mat');
+                    clearSelectedHighlight();
+                    card.classList.add('selected');
+                    state.selectedMaterial = mat;
+                    e.stopPropagation();
+                });
+            });
+            document.body.addEventListener('click',(e)=>{
+                if(!e.target.closest('.material-card') && !e.target.closest('.slot')) {
+                    if(state.selectedMaterial){ state.selectedMaterial=null; clearSelectedHighlight(); }
+                }
+            });
+        } else {
+            leftPanel.className = 'materials-panel subcode-panel';
+            leftPanel.innerHTML = `<div class="subcode-grid" id="subcodeGrid"></div>`;
+            generateSubcodeGrid();
+        }
+    }
+
+    function generateSubcodeGrid() {
+        state.currentSubcodeItems = buildAllSubcodeItems();
+        const gridDiv = document.getElementById('subcodeGrid');
+        if(!gridDiv) return;
+        gridDiv.innerHTML = '';
+        state.currentSubcodeItems.forEach(item => {
+            let cell = document.createElement('div');
+            cell.className = 'subcode-item';
+            const img = document.createElement('img');
+            img.src = getSubcodeImagePath(item.subcodeStr);
+            img.alt = item.subcodeStr;
+            cell.appendChild(img);
+            cell.addEventListener('click',()=>{
+                if(!state.gameActive || state.victory) return;
+                clearSelectedHighlight();
+                cell.classList.add('selected');
+                state.selectedSubcode = item.subcodeStr;
+            });
+            gridDiv.appendChild(cell);
+        });
+    }
+
+	function renderHistory() {
+		if(state.guessHistory.length===0) { 
+			historyArea.innerHTML = '<div style="text-align:center;color:#cca86e;">暂无提交记录</div>'; 
+			return; 
+		}
+		historyArea.innerHTML = '';
+		for(let i=0;i<state.guessHistory.length;i++) {
+			let entry = state.guessHistory[i];
+			let row = document.createElement('div'); row.className='history-row';
+			for(let j=0;j<10;j++) {
+				let cell = document.createElement('div'); 
+				cell.className = 'history-cell';
+				let guessVal = entry.guesses[j];
+				
+				// 显示子码图片（小图标）
+				if (guessVal) {
+					let img = document.createElement('img');
+					img.src = getSubcodeImagePath(guessVal);
+					img.alt = guessVal;
+					img.style.width = '36px';
+					img.style.height = '36px';
+					img.style.objectFit = 'contain';
+					img.style.borderRadius = '6px';
+					cell.appendChild(img);
+					// 添加文字作为后备（图片加载失败时显示）
+					img.onerror = () => { 
+						img.style.display = 'none'; 
+						cell.innerText = guessVal;
+						cell.style.fontSize = '0.7rem';
+					};
+				} else {
+					cell.innerText = '??';
+				}
+				
+				let res = entry.results[j];
+				let badge = document.createElement('div'); 
+				badge.className = 'result-badge';
+				if(res==='perfect') badge.innerHTML='✅';
+				else if(res==='positionWrong') badge.innerHTML='🔄';
+				else if(res==='partial') badge.innerHTML='🔶';
+				else badge.innerHTML='❌';
+				cell.appendChild(badge);
+				row.appendChild(cell);
+			}
+			historyArea.appendChild(row);
+		}
+	}
+
+    // 游戏初始化
+    function initNewGame(mode, newPassword=null) {
+        state.mode = mode;
+        state.victory=false;
+        state.gameActive=true;
+        state.currentAttempt=0;
+        state.guessHistory=[];
+        state.lockedSlots = new Array(10).fill(false);
+        currentUI.verifySlots = new Array(10).fill(null);
+        state.selectedMaterial=null;
+        state.selectedSubcode=null;
+        if(newPassword) state.password = [...newPassword];
+        else state.password = generateRandomPassword();
+        updateAttemptCounter();
+        stopTimer();
+        startTimer();
+        renderLeftPanel();
+        renderVerifySlots();
+        renderHistory();
+        if(mode==='practice') {
+            practiceExtras.innerHTML = `<div class="answer-tool"><button id="viewAnswerBtn">🔍 查看/隐藏答案</button><button id="newPuzzleBtn">✨ 新题目</button><button id="editAnswerBtn" style="background:#5f7a42;">✏️ 编辑密码(未猜测前)</button></div><div id="answerDisplay" style="margin-top:6px;font-size:0.8rem;display:none;"></div>`;
+            document.getElementById('viewAnswerBtn')?.addEventListener('click',()=>{
+                let ansDiv=document.getElementById('answerDisplay');
+                if(ansDiv.style.display==='none') { ansDiv.style.display='block'; ansDiv.innerHTML=`正确密码: ${state.password.join(' | ')}`; }
+                else ansDiv.style.display='none';
+            });
+            document.getElementById('newPuzzleBtn')?.addEventListener('click',()=>{ resetPracticeNewPuzzle(); });
+            document.getElementById('editAnswerBtn')?.addEventListener('click',()=>{ if(state.currentAttempt===0 && !state.victory) editPasswordManually(); else alert("已经提交过猜测，不可编辑答案"); });
+        } else if(mode==='timed') {
+            practiceExtras.innerHTML = `<button id="timedNewBtn">🎲 新题目(重置)</button>`;
+            document.getElementById('timedNewBtn')?.addEventListener('click',()=>{ if(state.gameActive && !state.victory) resetTimedNew(); });
+        } else if(mode==='race') {
+            practiceExtras.innerHTML = `<div>🏆 比赛模式 第 ${state.raceCurrentRound+1}/3 轮</div>`;
+        }
+    }
+
+    function resetPracticeNewPuzzle() {
+        if(state.mode==='practice') {
+            state.password = generateRandomPassword();
+            state.currentAttempt=0; state.guessHistory=[]; state.lockedSlots.fill(false);
+            currentUI.verifySlots = new Array(10).fill(null);
+            state.victory=false; state.gameActive=true;
+            updateAttemptCounter();
+            stopTimer(); startTimer();
+            renderVerifySlots(); renderHistory();
+        }
+    }
+
+    function editPasswordManually() {
+        let newPwd = prompt("请输入10个不同的合法子码(用逗号隔开), 例如: 12,34,11,22,33,44,55,66,77,XX", state.password.join(','));
+        if(newPwd){
+            let arr = newPwd.split(',').map(s=>s.trim());
+            if(arr.length===10 && arr.every(sc=>LEGAL_SUBCODES.includes(sc)) && new Set(arr).size===10){
+                state.password = arr;
+                alert("密码已更新！");
+                renderVerifySlots();
+            } else alert("无效: 需10个不同合法子码");
+        }
+    }
+
+    function resetTimedNew() { if(state.mode==='timed') initNewGame('timed'); }
+
+    function startNewRaceRound() {
+        state.password = generateRandomPassword();
+        state.currentAttempt=0;
+        state.guessHistory=[];
+        state.lockedSlots.fill(false);
+        currentUI.verifySlots = new Array(10).fill(null);
+        state.victory=false;
+        state.gameActive=true;
+        state.startTime=Date.now();
+        updateAttemptCounter();
+        renderVerifySlots();
+        renderHistory();
+        renderLeftPanel();
+        practiceExtras.innerHTML = `<div>🏆 比赛模式 第 ${state.raceCurrentRound+1}/3 密码</div>`;
+    }
+
+    function finishRace() {
+        state.gameActive=false;
+        state.victory=true;
+        stopTimer();
+        let totalAttempts = state.raceStats.reduce((a,b)=>a+b.attempts,0);
+        let totalTime = state.raceStats.reduce((a,b)=>a+b.timeSec,0);
+        alert(`🏆 比赛完成！\n各轮成绩:\n${state.raceStats.map((s,i)=>`密码${i+1}: ${s.attempts}次尝试, ${s.timeSec.toFixed(2)}秒`).join('\n')}\n总次数:${totalAttempts}  总用时:${totalTime.toFixed(2)}秒`);
+    }
+
+    function setMode(mode) {
+        if(state.mode === mode && state.gameActive) return;
+        if(state.timerInterval) stopTimer();
+        state.mode = mode;
+        if(mode === 'race') {
+            state.raceStats = [];
+            state.raceCurrentRound = 0;
+            state.raceActive=true;
+            initNewGame('race');
+            startNewRaceRound();
+        } else {
+            initNewGame(mode);
+        }
+        document.querySelectorAll('.mode-btn').forEach(btn=>btn.classList.remove('active'));
+        document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
+    }
+
+    document.querySelectorAll('.mode-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>setMode(btn.getAttribute('data-mode')));
+    });
+    submitBtn.addEventListener('click',onSubmit);
+
+    // 帮助按钮浮窗逻辑
+    const helpBtn = document.getElementById('helpBtn');
+    const helpOverlay = document.getElementById('helpOverlay');
+    const closeHelpBtn = document.getElementById('closeHelpBtn');
+    if (helpBtn && helpOverlay && closeHelpBtn) {
+        helpBtn.addEventListener('click', () => { helpOverlay.style.visibility = 'visible'; });
+        closeHelpBtn.addEventListener('click', () => { helpOverlay.style.visibility = 'hidden'; });
+        helpOverlay.addEventListener('click', (e) => { if (e.target === helpOverlay) helpOverlay.style.visibility = 'hidden'; });
+    }
+
+    // 初始加载练习模式
+    setMode('practice');
+</script>
+</body>
+</html>
