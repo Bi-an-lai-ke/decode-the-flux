@@ -404,7 +404,9 @@
     <h1>🔐 解码风云 🔍</h1>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <div class="rule-board">两个可重复的素材可以按特定规则无顺序地组合成子码，10个不同的子码按一定顺序组合成密码。请使用尽可能少的尝试次数尽快推理出正确密码。右击点击栏位可移除选择。</div>
-        <button id="helpBtn" style="background:#ab8e54; border-radius:2rem; padding:0.5rem 1rem; margin-left:1rem;">❓ 帮助</button>
+		<div>
+			<button id="helpBtn" style="background:#ab8e54; border-radius:2rem; padding:0.5rem 1rem;">❓ 帮助</button><button id="downloadExeBtn" style="background:#5f7a42; border-radius:2rem; padding:0.5rem 1rem; margin-right:0.5rem;">💾 本地体验</button>	
+		</div>
     </div>
     <div class="mode-bar">
         <button class="mode-btn" data-mode="practice">📘 练习模式</button>
@@ -1128,7 +1130,22 @@
 
     // 初始加载练习模式
     setMode('practice');
-
+	
+	// 下载exe文件，链接指向 GitHub Release 的文件
+	const downloadBtn = document.getElementById('downloadExeBtn');
+	if (downloadBtn) {
+		downloadBtn.addEventListener('click', () => {
+			// **请务必替换下面的 URL 为你的实际地址**
+			const fileUrl = 'https://github.com/Bi-an-lai-ke/decode-the-flux/releases/download/1.1.0/decodetheflux-1.1.0.exe';
+			const link = document.createElement('a');
+			link.href = fileUrl;
+			link.download = '解码风云.exe';
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+		});
+	}
+	
 	let cheatBuffer = "";
 	let cheatTimeout = null;
 
