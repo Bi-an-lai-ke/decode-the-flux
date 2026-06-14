@@ -228,6 +228,9 @@
 			position: relative;
 			cursor: pointer;
 			overflow: hidden;
+			color: white;
+			font-weight: bold;
+			text-shadow: 0 0 2px rgba(0,0,0,0.5);
 		}
         .slot img {
             width: 100%;
@@ -414,7 +417,7 @@
             <div class="history-area" id="historyArea"><div style="text-align:center;color:#cca86e;">等待提交记录...</div></div>
             <div class="verify-row" id="verifyRow"></div>
             <div class="action-bar">
-                <div class="timer-counter"><span>⏲️ 耗时: <span id="timerDisplay">0.00</span></span><span>🎯 尝试次数: <span id="attemptCount">0</span></span></div>
+                <div class="timer-counter"><span>⏲️ 耗时: <span id="timerDisplay">00:00.000</span></span><span>🎯 尝试次数: <span id="attemptCount">0</span></span></div>
                 <div class="legend">✅完全正确 🔄栏位错误 🔶部分正确 ❌完全错误</div>
                 <button id="submitBtn" disabled>🚀 提交尝试</button>
             </div>
@@ -476,7 +479,6 @@
 	</div>
 	<!-- 测试模式面板 -->
 	<div id="testPanel" style="position: fixed; bottom: 20px; right: 20px; background: #1e2a1ae0; backdrop-filter: blur(8px); border-radius: 1rem; padding: 0.8rem; border: 2px solid gold; display: none; z-index: 3000; max-width: 90vw; overflow-x: auto;">
-		<div style="color: white; font-size: 0.8rem; margin-bottom: 5px;">🔍 测试模式 - 正确答案</div>
 		<div id="testAnswerContainer" style="display: flex; gap: 5px; flex-wrap: wrap;"></div>
 	</div>
 </div>
@@ -611,8 +613,22 @@
         }
     }
     const state = new GameState();
-    let currentUI = { verifySlots: new Array(10).fill(null) };
 
+	// 作弊模式标志
+	let cheatPure = false;   // puremode: 显示文字而非图片
+	let cheatEasy = false;   // easymode: 干扰/非法子码红色背景
+    
+	let currentUI = { verifySlots: new Array(10).fill(null) };
+
+	// 根据当前作弊标志刷新整个界面
+	function refreshAllDisplays() {
+		// 重新渲染左侧面板（素材区或子码区）
+		renderLeftPanel();
+		// 重新渲染验证行
+		renderVerifySlots();
+		// 重新渲染历史记录
+		renderHistory();
+	}
     // DOM 元素
     const leftPanel = document.getElementById('leftPanel');
     const verifyRowDiv = document.getElementById('verifyRow');
@@ -727,17 +743,25 @@
             if(state.lockedSlots[i]) slot.classList.add('locked');
             const content = currentUI.verifySlots[i];
             if(content) {
-                if(content.type === 'material') {
-                    const img = document.createElement('img');
-                    img.src = getMaterialImagePath(content.val);
-                    img.alt = content.val;
-                    slot.appendChild(img);
-                } else if(content.type === 'subcode') {
-                    const img = document.createElement('img');
-                    img.src = getSubcodeImagePath(content.val);
-                    img.alt = content.val;
-                    slot.appendChild(img);
-                }
+				if(content.type === 'material') {
+					if (cheatPure) {
+						slot.innerText = content.val;
+					} else {
+						const img = document.createElement('img');
+						img.src = getMaterialImagePath(content.val);
+						img.alt = content.val;
+						slot.appendChild(img);
+					}
+				} else if(content.type === 'subcode') {
+					if (cheatPure) {
+						slot.innerText = content.val;
+					} else {
+						const img = document.createElement('img');
+						img.src = getSubcodeImagePath(content.val);
+						img.alt = content.val;
+						slot.appendChild(img);
+					}
+				}
             } else {
                 slot.innerText = '?';
             }
@@ -800,12 +824,12 @@
     function renderLeftPanel() {
         if(state.mode === 'practice') {
             leftPanel.className = 'materials-panel';
-            leftPanel.innerHTML = `<div class="grid-4x">
-                <div class="row-icons">${MATERIALS.slice(0,3).map(m=>`<div class="material-card" data-mat="${m}"><img src="${getMaterialImagePath(m)}" alt="${m}"></div>`).join('')}</div>
-                <div class="row-icons">${MATERIALS.slice(3,6).map(m=>`<div class="material-card" data-mat="${m}"><img src="${getMaterialImagePath(m)}" alt="${m}"></div>`).join('')}</div>
-                <div class="row-icons">${MATERIALS.slice(6,9).map(m=>`<div class="material-card" data-mat="${m}"><img src="${getMaterialImagePath(m)}" alt="${m}"></div>`).join('')}</div>
-                <div class="row-icons"><div class="material-card" data-mat="X"><img src="${getMaterialImagePath('X')}" alt="X"></div></div>
-            </div>`;
+			leftPanel.innerHTML = `<div class="grid-4x">
+				<div class="row-icons">${MATERIALS.slice(0,3).map(m=>`<div class="material-card" data-mat="${m}">${cheatPure ? m : `<img src="${getMaterialImagePath(m)}" alt="${m}">`}</div>`).join('')}</div>
+				<div class="row-icons">${MATERIALS.slice(3,6).map(m=>`<div class="material-card" data-mat="${m}">${cheatPure ? m : `<img src="${getMaterialImagePath(m)}" alt="${m}">`}</div>`).join('')}</div>
+				<div class="row-icons">${MATERIALS.slice(6,9).map(m=>`<div class="material-card" data-mat="${m}">${cheatPure ? m : `<img src="${getMaterialImagePath(m)}" alt="${m}">`}</div>`).join('')}</div>
+				<div class="row-icons"><div class="material-card" data-mat="X">${cheatPure ? 'X' : `<img src="${getMaterialImagePath('X')}" alt="X">`}</div></div>
+			</div>`;
             document.querySelectorAll('.material-card').forEach(card=>{
                 card.addEventListener('click',(e)=>{
                     if(!state.gameActive || state.victory) return;
@@ -828,69 +852,98 @@
         }
     }
 
-    function generateSubcodeGrid() {
-        state.currentSubcodeItems = buildAllSubcodeItems();
-        const gridDiv = document.getElementById('subcodeGrid');
-        if(!gridDiv) return;
-        gridDiv.innerHTML = '';
-        state.currentSubcodeItems.forEach(item => {
-            let cell = document.createElement('div');
-            cell.className = 'subcode-item';
-            const img = document.createElement('img');
-            img.src = getSubcodeImagePath(item.subcodeStr);
-            img.alt = item.subcodeStr;
-            cell.appendChild(img);
-            cell.addEventListener('click',()=>{
-                if(!state.gameActive || state.victory) return;
-                clearSelectedHighlight();
-                cell.classList.add('selected');
-                state.selectedSubcode = item.subcodeStr;
-            });
-            gridDiv.appendChild(cell);
-        });
-    }
-
+	function generateSubcodeGrid() {
+		state.currentSubcodeItems = buildAllSubcodeItems();
+		const gridDiv = document.getElementById('subcodeGrid');
+		if (!gridDiv) return;
+		gridDiv.innerHTML = '';
+		state.currentSubcodeItems.forEach(item => {
+			let cell = document.createElement('div');
+			cell.className = 'subcode-item';
+			
+			// 根据 puremode 决定显示文字还是图片
+			if (cheatPure) {
+				cell.innerText = item.subcodeStr;
+				cell.style.fontSize = '0.7rem';
+				cell.style.fontWeight = 'bold';
+				cell.style.color = '#ffecb3';
+			} else {
+				const img = document.createElement('img');
+				img.src = getSubcodeImagePath(item.subcodeStr);
+				img.alt = item.subcodeStr;
+				cell.appendChild(img);
+			}
+			
+			// 根据 easymode 为非法或干扰子码设置红色背景
+			if (cheatEasy && (item.type === 'illegal' || item.type === 'distractor')) {
+				cell.style.backgroundColor = '#aa2e2e';
+				cell.style.borderColor = '#ff8888';
+			} else {
+				// 恢复默认样式（避免残留）
+				cell.style.backgroundColor = '';
+				cell.style.borderColor = '';
+			}
+			
+			cell.addEventListener('click', () => {
+				if (!state.gameActive || state.victory) return;
+				clearSelectedHighlight();
+				cell.classList.add('selected');
+				state.selectedSubcode = item.subcodeStr;
+			});
+			
+			gridDiv.appendChild(cell);
+		});
+	}
+	
 	function renderHistory() {
-		if(state.guessHistory.length===0) { 
-			historyArea.innerHTML = '<div style="text-align:center;color:#cca86e;">暂无提交记录</div>'; 
-			return; 
+		if (state.guessHistory.length === 0) {
+			historyArea.innerHTML = '<div style="text-align:center;color:#cca86e;">暂无提交记录</div>';
+			return;
 		}
 		historyArea.innerHTML = '';
-		for(let i=0;i<state.guessHistory.length;i++) {
+		for (let i = 0; i < state.guessHistory.length; i++) {
 			let entry = state.guessHistory[i];
-			let row = document.createElement('div'); row.className='history-row';
-			for(let j=0;j<10;j++) {
-				let cell = document.createElement('div'); 
+			let row = document.createElement('div');
+			row.className = 'history-row';
+			for (let j = 0; j < 10; j++) {
+				let cell = document.createElement('div');
 				cell.className = 'history-cell';
 				let guessVal = entry.guesses[j];
 				
-				// 显示子码图片（小图标）
+				// 根据 puremode 决定显示文字还是小图片
 				if (guessVal) {
-					let img = document.createElement('img');
-					img.src = getSubcodeImagePath(guessVal);
-					img.alt = guessVal;
-					img.style.width = '36px';
-					img.style.height = '36px';
-					img.style.objectFit = 'contain';
-					img.style.borderRadius = '6px';
-					cell.appendChild(img);
-					// 添加文字作为后备（图片加载失败时显示）
-					img.onerror = () => { 
-						img.style.display = 'none'; 
+					if (cheatPure) {
 						cell.innerText = guessVal;
 						cell.style.fontSize = '0.7rem';
-					};
+						cell.style.fontWeight = 'bold';
+					} else {
+						let img = document.createElement('img');
+						img.src = getSubcodeImagePath(guessVal);
+						img.alt = guessVal;
+						img.style.width = '36px';
+						img.style.height = '36px';
+						img.style.objectFit = 'contain';
+						img.style.borderRadius = '6px';
+						cell.appendChild(img);
+						// 图片加载失败时回退文字
+						img.onerror = () => {
+							img.style.display = 'none';
+							cell.innerText = guessVal;
+							cell.style.fontSize = '0.7rem';
+						};
+					}
 				} else {
 					cell.innerText = '??';
 				}
 				
+				// 结果角标
 				let res = entry.results[j];
-				let badge = document.createElement('div'); 
+				let badge = document.createElement('div');
 				badge.className = 'result-badge';
-				if(res==='perfect') badge.innerHTML='✅';
-				else if(res==='positionWrong') badge.innerHTML='🔄';
-				else if(res==='partial') badge.innerHTML='🔶';
-				else badge.innerHTML='❌';
+				if (res === 'perfect') badge.innerHTML = '✅';
+				else if (res === 'positionWrong') badge.innerHTML = '🔄';
+				else if (res === 'partial') badge.innerHTML = '🔶';
+				else badge.innerHTML = '❌';
 				cell.appendChild(badge);
 				row.appendChild(cell);
 			}
@@ -926,7 +979,7 @@
                 else ansDiv.style.display='none';
             });
             document.getElementById('newPuzzleBtn')?.addEventListener('click',()=>{ resetPracticeNewPuzzle(); });
-            document.getElementById('editAnswerBtn')?.addEventListener('click',()=>{ if(state.currentAttempt===0 && !state.victory) editPasswordManually(); else alert("已经提交过猜测，不可编辑答案"); });
+            document.getElementById('editAnswerBtn')?.addEventListener('click',()=>{ if(state.currentAttempt===0 && !state.victory) editPasswordManually(); else showMessage("提示", "已经提交过猜测，不可编辑答案"); });
         } else if(mode==='timed') {
             practiceExtras.innerHTML = `<button id="timedNewBtn">🎲 新题目(重置)</button>`;
             document.getElementById('timedNewBtn')?.addEventListener('click',()=>{ if(state.gameActive && !state.victory) resetTimedNew(); });
@@ -1075,37 +1128,169 @@
 
     // 初始加载练习模式
     setMode('practice');
+
+	let cheatBuffer = "";
+	let cheatTimeout = null;
+
+	function handleCheatKey(e) {
+		// 清除之前的超时计时器
+		if (cheatTimeout) clearTimeout(cheatTimeout);
+		
+		cheatBuffer += e.key;
+		cheatBuffer = cheatBuffer.slice(-12); // 保留最近12个字符
+		const lower = cheatBuffer.toLowerCase();
+		
+		// 设置新的超时：4秒后清空缓冲区
+		cheatTimeout = setTimeout(() => {
+			cheatBuffer = "";
+			cheatTimeout = null;
+		}, 4000);
+		
+		if (lower.includes("puremode")) {
+			cheatPure = true;
+			refreshAllDisplays();
+			cheatBuffer = "";
+			if (cheatTimeout) clearTimeout(cheatTimeout);
+			cheatTimeout = null;
+			showMessage("作弊模式", "已启用纯文字模式，所有图片替换为文字");
+		} else if (lower.includes("easymode")) {
+			cheatEasy = true;
+			refreshAllDisplays();
+			cheatBuffer = "";
+			if (cheatTimeout) clearTimeout(cheatTimeout);
+			cheatTimeout = null;
+			showMessage("作弊模式", "已启用easy模式，干扰/非法子码显示红色");
+		} else if (lower.includes("cancel")) {
+			cheatPure = false;
+			cheatEasy = false;
+			refreshAllDisplays();
+			cheatBuffer = "";
+			if (cheatTimeout) clearTimeout(cheatTimeout);
+			cheatTimeout = null;
+			showMessage("作弊模式", "已取消所有作弊效果");
+		}
+	}
+	document.addEventListener("keydown", handleCheatKey);
 	
-	// 测试模式：键入 "testmode" 显示正确密码图片
+	// 测试模式：键入 "testmode" 显示正确密码图片和代号
 	let testModeBuffer = "";
+	let testTimeout = null;
+	let testPanelAutoHideTimer = null;  // 用于自动隐藏的定时器
+
 	function handleTestModeKey(e) {
+		if (testTimeout) clearTimeout(testTimeout);
+		
 		testModeBuffer += e.key;
-		testModeBuffer = testModeBuffer.slice(-8); // 只保留最近8个字符
+		testModeBuffer = testModeBuffer.slice(-8);
+		
+		testTimeout = setTimeout(() => {
+			testModeBuffer = "";
+			testTimeout = null;
+		}, 4000);
+		
 		if (testModeBuffer.toLowerCase() === "testmode") {
 			const panel = document.getElementById("testPanel");
 			const container = document.getElementById("testAnswerContainer");
 			if (panel && container) {
-				// 显示当前密码的10个子码图片
+				// 清除之前的自动隐藏定时器
+				if (testPanelAutoHideTimer) clearTimeout(testPanelAutoHideTimer);
+				
+				// 清空并重新填充内容
 				container.innerHTML = "";
 				state.password.forEach(sub => {
-					const img = document.createElement("img");
+					const card = document.createElement('div');
+					card.style.display = 'flex';
+					card.style.flexDirection = 'column';
+					card.style.alignItems = 'center';
+					card.style.justifyContent = 'center';
+					card.style.width = '70px';
+					card.style.margin = '4px';
+					card.style.backgroundColor = '#332811';
+					card.style.borderRadius = '12px';
+					card.style.border = '1px solid gold';
+					card.style.padding = '4px';
+
+					const img = document.createElement('img');
 					img.src = getSubcodeImagePath(sub);
 					img.alt = sub;
-					img.style.width = "50px";
-					img.style.height = "50px";
-					img.style.objectFit = "contain";
-					img.style.border = "1px solid gold";
-					img.style.borderRadius = "8px";
-					img.style.background = "#332811";
-					container.appendChild(img);
+					img.style.width = '50px';
+					img.style.height = '50px';
+					img.style.objectFit = 'contain';
+					img.style.borderRadius = '8px';
+					img.style.background = '#00000066';
+
+					const label = document.createElement('div');
+					label.innerText = sub;
+					label.style.color = 'white';
+					label.style.fontSize = '12px';
+					label.style.fontWeight = 'bold';
+					label.style.marginTop = '4px';
+					label.style.textAlign = 'center';
+
+					card.appendChild(img);
+					card.appendChild(label);
+					container.appendChild(card);
 				});
+				
+				// 确保面板头部有一个关闭按钮（如果还没有）
+				let closeBtn = document.getElementById("testPanelCloseBtn");
+				if (!closeBtn) {
+					const headerDiv = document.createElement('div');
+					headerDiv.style.display = 'flex';
+					headerDiv.style.justifyContent = 'space-between';
+					headerDiv.style.alignItems = 'center';
+					headerDiv.style.marginBottom = '8px';
+					
+					const titleSpan = document.createElement('span');
+					titleSpan.innerText = '🔍 测试模式 - 正确答案';
+					titleSpan.style.color = 'white';
+					titleSpan.style.fontSize = '0.8rem';
+					
+					closeBtn = document.createElement('button');
+					closeBtn.id = 'testPanelCloseBtn';
+					closeBtn.innerText = '✖';
+					closeBtn.style.background = '#aa2e2e';
+					closeBtn.style.border = 'none';
+					closeBtn.style.color = 'white';
+					closeBtn.style.fontSize = '14px';
+					closeBtn.style.fontWeight = 'bold';
+					closeBtn.style.borderRadius = '50%';
+					closeBtn.style.width = '28px';
+					closeBtn.style.height = '28px';
+					closeBtn.style.cursor = 'pointer';
+					closeBtn.style.display = 'flex';
+					closeBtn.style.alignItems = 'center';
+					closeBtn.style.justifyContent = 'center';
+					
+					headerDiv.appendChild(titleSpan);
+					headerDiv.appendChild(closeBtn);
+					
+					// 将头部插入到 panel 的第一个子元素之前
+					panel.insertBefore(headerDiv, panel.firstChild);
+				}
+				
+				// 绑定关闭事件（避免重复绑定）
+				closeBtn = document.getElementById("testPanelCloseBtn");
+				if (closeBtn) {
+					// 移除旧的监听器，重新绑定
+					const newCloseBtn = closeBtn.cloneNode(true);
+					closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+					newCloseBtn.addEventListener('click', () => {
+						panel.style.display = 'none';
+						if (testPanelAutoHideTimer) clearTimeout(testPanelAutoHideTimer);
+					});
+				}
+				
 				panel.style.display = "block";
-				// 45秒后自动隐藏（可选）
-				setTimeout(() => {
+				// 设置自动隐藏（450秒）
+				testPanelAutoHideTimer = setTimeout(() => {
 					panel.style.display = "none";
-				}, 45000);
+					testPanelAutoHideTimer = null;
+				}, 450000);
 			}
-			testModeBuffer = ""; // 清空缓存
+			testModeBuffer = "";
+			if (testTimeout) clearTimeout(testTimeout);
+			testTimeout = null;
 		}
 	}
 	document.addEventListener("keydown", handleTestModeKey);
