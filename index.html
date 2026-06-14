@@ -474,6 +474,11 @@
 			</div>
 		</div>
 	</div>
+	<!-- 测试模式面板 -->
+	<div id="testPanel" style="position: fixed; bottom: 20px; right: 20px; background: #1e2a1ae0; backdrop-filter: blur(8px); border-radius: 1rem; padding: 0.8rem; border: 2px solid gold; display: none; z-index: 3000; max-width: 90vw; overflow-x: auto;">
+		<div style="color: white; font-size: 0.8rem; margin-bottom: 5px;">🔍 测试模式 - 正确答案</div>
+		<div id="testAnswerContainer" style="display: flex; gap: 5px; flex-wrap: wrap;"></div>
+	</div>
 </div>
 <script>
     // ---------- 全局常量 ----------
@@ -655,16 +660,17 @@
             state.victory = true;
             state.gameActive = false;
             stopTimer();
-            if(state.mode === 'race') {
-                let elapsed = (Date.now() - state.startTime)/1000;
-                state.raceStats.push({ attempts: state.currentAttempt, timeSec: elapsed });
-                if(state.raceCurrentRound < 3) {
-                    state.raceCurrentRound++;
-                    startNewRaceRound();
-                } else {
-                    finishRace();
-                }
-            } else {
+			if(state.mode === 'race') {
+				let elapsed = (Date.now() - state.startTime)/1000;
+				state.raceStats.push({ attempts: state.currentAttempt, timeSec: elapsed });
+				if(state.raceCurrentRound + 1 < 3) {  // 注意：+1 后与总数比较
+					state.raceCurrentRound++;
+					startNewRaceRound();
+				} else {
+					finishRace();
+				}
+			}
+            else {
 				submitBtn.disabled = true;
 				let finalElapsed = (Date.now() - state.startTime) / 1000;
 				showMessage("🎉 破解成功", `尝试次数:${state.currentAttempt} 用时:${formatTime(finalElapsed)}`); 
@@ -1005,31 +1011,34 @@
 	}
     function resetTimedNew() { if(state.mode==='timed') initNewGame('timed'); }
 
-    function startNewRaceRound() {
-        state.password = generateRandomPassword();
-        state.currentAttempt=0;
-        state.guessHistory=[];
-        state.lockedSlots.fill(false);
-        currentUI.verifySlots = new Array(10).fill(null);
-        state.victory=false;
-        state.gameActive=true;
-        state.startTime=Date.now();
-        updateAttemptCounter();
-        renderVerifySlots();
-        renderHistory();
-        renderLeftPanel();
-        practiceExtras.innerHTML = `<div>🏆 比赛模式 第 ${state.raceCurrentRound+1}/3 密码</div>`;
-    }
+	function startNewRaceRound() {
+		state.password = generateRandomPassword();
+		state.currentAttempt = 0;
+		state.guessHistory = [];
+		state.lockedSlots.fill(false);
+		currentUI.verifySlots = new Array(10).fill(null);
+		state.victory = false;
+		state.gameActive = true;
+		state.startTime = Date.now();       // 重置开始时间
+		stopTimer();                        // 清除旧定时器
+		startTimer();                       // 重新开始计时
+		updateAttemptCounter();
+		renderVerifySlots();
+		renderHistory();
+		renderLeftPanel();
+		practiceExtras.innerHTML = `<div>🏆 比赛模式 第 ${state.raceCurrentRound+1}/3 密码</div>`;
+	}
 
-    function finishRace() {
-        state.gameActive=false;
-        state.victory=true;
-        stopTimer();
+	function finishRace() {
+		state.gameActive = false;
+		state.victory = true;
+		stopTimer();
 		let totalAttempts = state.raceStats.reduce((a,b)=>a+b.attempts,0);
 		let totalTime = state.raceStats.reduce((a,b)=>a+b.timeSec,0);
 		let message = `各轮成绩:\n${state.raceStats.map((s,i)=>`密码${i+1}: ${s.attempts}次尝试, ${formatTime(s.timeSec)}`).join('\n')}\n总次数:${totalAttempts}  总用时:${formatTime(totalTime)}`;
 		showMessage("🏆 比赛完成", message);
-		showMessage("🏆 比赛完成", message);
+		// 可选：禁用提交按钮等
+		submitBtn.disabled = true;
 	}
 
     function setMode(mode) {
@@ -1066,6 +1075,40 @@
 
     // 初始加载练习模式
     setMode('practice');
+	
+	// 测试模式：键入 "testmode" 显示正确密码图片
+	let testModeBuffer = "";
+	function handleTestModeKey(e) {
+		testModeBuffer += e.key;
+		testModeBuffer = testModeBuffer.slice(-8); // 只保留最近8个字符
+		if (testModeBuffer.toLowerCase() === "testmode") {
+			const panel = document.getElementById("testPanel");
+			const container = document.getElementById("testAnswerContainer");
+			if (panel && container) {
+				// 显示当前密码的10个子码图片
+				container.innerHTML = "";
+				state.password.forEach(sub => {
+					const img = document.createElement("img");
+					img.src = getSubcodeImagePath(sub);
+					img.alt = sub;
+					img.style.width = "50px";
+					img.style.height = "50px";
+					img.style.objectFit = "contain";
+					img.style.border = "1px solid gold";
+					img.style.borderRadius = "8px";
+					img.style.background = "#332811";
+					container.appendChild(img);
+				});
+				panel.style.display = "block";
+				// 45秒后自动隐藏（可选）
+				setTimeout(() => {
+					panel.style.display = "none";
+				}, 45000);
+			}
+			testModeBuffer = ""; // 清空缓存
+		}
+	}
+	document.addEventListener("keydown", handleTestModeKey);
 </script>
 </body>
 </html>
